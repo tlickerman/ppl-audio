@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PPL Audio">
+<title>PPL Audio Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #080d1a;
+    --panel: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.09);
+    --cloud: #ddeeff;
+    --amber: #f5a623;
+    --green: #3ecf82;
+    --red: #e05252;
+    --dim: #3d5570;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--sky);
+    color: var(--cloud);
+    font-family: 'DM Mono', 'Courier New', monospace;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 44px;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Starfield */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 78% 6%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 34% 18%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 91% 22%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 4%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 6% 35%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 67% 14%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 23% 28%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 38%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 11%, rgba(255,255,255,0.5) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Horizon glow */
+  body::after {
+    content: '';
+    position: fixed; bottom: 0; left: 0; right: 0; height: 40vh; z-index: 0;
+    background: radial-gradient(ellipse at 50% 115%, rgba(245,166,35,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 660px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  .header { text-align: center; margin-bottom: 26px; }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(44px, 11vw, 72px);
+    letter-spacing: 8px;
+    line-height: 1;
+    color: var(--cloud);
+  }
+  .logo em { color: var(--amber); font-style: normal; }
+  .tagline { font-size: 9px; letter-spacing: 5px; color: var(--dim); text-transform: uppercase; margin-top: 6px; }
+
+  /* ── Topic bar ── */
+  .topics {
+    display: flex; flex-wrap: wrap; gap: 7px;
+    justify-content: center; margin-bottom: 20px; width: 100%;
+  }
+  .topic-btn {
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px;
+    text-transform: uppercase; padding: 6px 13px; border-radius: 2px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--dim); cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .topic-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .topic-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,0.08); }
+
+  /* ── Progress ── */
+  .progress-track {
+    height: 2px; background: var(--border); border-radius: 1px;
+    margin-bottom: 18px; width: 100%; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--amber); border-radius: 1px;
+    width: 0%; transition: width 0.6s ease;
+  }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 4px;
+    margin-bottom: 14px; width: 100%;
+  }
+  .stat { text-align: center; }
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 2px; line-height: 1; color: var(--amber);
+  }
+  .stat-val.green { color: var(--green); }
+  .stat-lbl { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-top: 2px; }
+  .stat-div { width: 1px; height: 32px; background: var(--border); }
+
+  .speaking-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--green); opacity: 0; transition: opacity 0.3s;
+  }
+  .speaking-badge.active { opacity: 1; }
+  .speak-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--green);
+    animation: pulse 1s infinite;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 28px 24px; margin-bottom: 16px;
+    min-height: 250px; width: 100%; position: relative;
+  }
+
+  .center-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 190px; gap: 14px;
+  }
+  .ready-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px; color: var(--amber); letter-spacing: 5px;
+  }
+  .ready-sub {
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--dim); text-align: center; line-height: 2;
+  }
+
+  .spinner {
+    width: 30px; height: 30px;
+    border: 2px solid var(--border); border-top-color: var(--amber);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  .loading-text { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
+
+  /* Phase label */
+  .phase-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  }
+  .phase-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber); flex-shrink: 0; animation: pulse 2s infinite;
+  }
+  .phase-label { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
+  .phase-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* Timer arc */
+  .timer-arc-wrap { flex-shrink: 0; }
+  .arc-track { fill: none; stroke: var(--border); stroke-width: 2; }
+  .arc-fill {
+    fill: none; stroke: var(--amber); stroke-width: 2;
+    stroke-linecap: round; stroke-dasharray: 94.2;
+    stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear;
+    transform: rotate(-90deg); transform-origin: center;
+  }
+
+  /* Question */
+  .question-text {
+    font-size: clamp(14px, 3.2vw, 16px); line-height: 1.75;
+    color: var(--cloud); margin-bottom: 20px; font-weight: 300;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 15px; border: 1px solid var(--border);
+    border-radius: 3px; background: rgba(255,255,255,0.02);
+    transition: border-color 0.4s, background 0.4s;
+  }
+  .option.correct { border-color: var(--green); background: rgba(62,207,130,0.07); }
+  .opt-letter {
+    font-size: 10px; letter-spacing: 1px; color: var(--dim);
+    min-width: 16px; padding-top: 1px; flex-shrink: 0;
+    transition: color 0.4s;
+  }
+  .option.correct .opt-letter { color: var(--green); }
+  .opt-text {
+    font-size: 13px; line-height: 1.55; color: #7090b0;
+    transition: color 0.4s;
+  }
+  .option.correct .opt-text { color: var(--cloud); }
+
+  /* Explanation */
+  .explanation {
+    margin-top: 18px; padding: 14px 16px;
+    border-left: 2px solid var(--amber);
+    background: rgba(245,166,35,0.04);
+    font-size: 12px; line-height: 1.7; color: #90aac0;
+    display: none;
+  }
+  .explanation.visible { display: block; animation: fadeUp 0.3s ease; }
+  .expl-label {
+    color: var(--amber); font-size: 8px; letter-spacing: 3px;
+    text-transform: uppercase; display: block; margin-bottom: 7px;
+  }
+
+  /* Error */
+  .error-box {
+    font-size: 11px; color: var(--red); padding: 10px 14px;
+    border: 1px solid rgba(224,82,82,0.3); border-radius: 3px;
+    margin-bottom: 14px; width: 100%; line-height: 1.6;
+    word-break: break-word; display: none;
+  }
+  .error-box.visible { display: block; }
+
+  /* Controls */
+  .controls { display: flex; gap: 10px; width: 100%; }
+  .ctrl-btn {
+    flex: 1; font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; padding: 14px;
+    border-radius: 3px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--dim);
+    cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .ctrl-btn:hover:not(:disabled) { border-color: var(--cloud); color: var(--cloud); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .ctrl-btn.primary { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,0.06); }
+  .ctrl-btn.primary:hover:not(:disabled) { background: rgba(245,166,35,0.14); }
+  .ctrl-btn.active { border-color: var(--amber); color: var(--amber); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">PPL <em>AUDIO</em></div>
+    <div class="tagline">Private Pilot Knowledge · Hands-Free Study</div>
+  </div>
+
+  <!-- Topics -->
+  <div class="topics" id="topicBar">
+    <button class="topic-btn active" data-topic="all">All Topics</button>
+    <button class="topic-btn" data-topic="airspace">Airspace</button>
+    <button class="topic-btn" data-topic="regulations">Regulations</button>
+    <button class="topic-btn" data-topic="weather">Weather</button>
+    <button class="topic-btn" data-topic="aerodynamics">Aerodynamics</button>
+    <button class="topic-btn" data-topic="systems">Systems</button>
+    <button class="topic-btn" data-topic="emergencies">Emergencies</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="statQ">—</div>
+      <div class="stat-lbl">Question</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat">
+      <div class="stat-val green" id="statH">0</div>
+      <div class="stat-lbl">Heard</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="speaking-badge" id="speakBadge">
+      <div class="speak-dot"></div>
+      Speaking
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="card" id="mainCard">
+
+    <!-- Ready -->
+    <div class="center-state" id="stateReady">
+      <div class="ready-title">READY</div>
+      <div class="ready-sub">Select a topic above<br>then press Start Quiz</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="center-state" id="stateLoading" style="display:none">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Loading questions...</div>
+    </div>
+
+    <!-- Quiz -->
+    <div id="stateQuiz" style="display:none">
+      <div class="phase-row">
+        <div class="phase-dot"></div>
+        <span class="phase-label" id="phaseLabel">Question</span>
+        <div class="phase-line"></div>
+        <div class="timer-arc-wrap">
+          <svg width="32" height="32" viewBox="0 0 36 36">
+            <circle class="arc-track" cx="18" cy="18" r="15"/>
+            <circle class="arc-fill" id="arcFill" cx="18" cy="18" r="15"/>
+          </svg>
+        </div>
+      </div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="explanation" id="explanationBox">
+        <span class="expl-label">Correct Answer</span>
+        <span id="explanationText"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn" id="btnSkip" onclick="skipQ()" disabled>Skip →</button>
+    <button class="ctrl-btn primary" id="btnStart" onclick="startQuiz()">Start Quiz</button>
+    <button class="ctrl-btn" id="btnPause" onclick="togglePause()" disabled>Pause</button>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let questions = [], qIdx = 0, heard = 0;
+let running = false, paused = false, skipFlag = false;
+let currentTopic = 'all';
+let voice = null;
+const synth = window.speechSynthesis;
+
+// ── Voice init ─────────────────────────────────────────
+function initVoice() {
+  const pick = () => {
+    const voices = synth.getVoices();
+    if (!voices.length) return;
+    const want = ['Samantha','Karen','Daniel','Google US English','Alex'];
+    for (const n of want) {
+      const v = voices.find(v => v.name.includes(n));
+      if (v) { voice = v; return; }
+    }
+    voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+  };
+  synth.getVoices().length ? pick() : (synth.onvoiceschanged = pick);
+}
+initVoice();
+
+// ── Helpers ────────────────────────────────────────────
+function speak(text, rate = 0.88) {
+  return new Promise(resolve => {
+    if (!running) return resolve();
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if (voice) u.voice = voice;
+    u.rate = rate; u.pitch = 1; u.lang = 'en-US';
+    u.onstart = () => badge(true);
+    u.onend = u.onerror = () => { badge(false); resolve(); };
+    synth.speak(u);
+  });
+}
+
+function snooze(ms) {
+  return new Promise(resolve => {
+    const end = Date.now() + ms;
+    const t = setInterval(() => {
+      if (!running || skipFlag || Date.now() >= end) { clearInterval(t); resolve(); }
+    }, 80);
+  });
+}
+
+function waitResume() {
+  return new Promise(resolve => {
+    const t = setInterval(() => { if (!paused) { clearInterval(t); resolve(); } }, 200);
+  });
+}
+
+function badge(on) { document.getElementById('speakBadge').classList.toggle('active', on); }
+function setArc(f) { document.getElementById('arcFill').style.strokeDashoffset = (94.2 * (1 - f)).toFixed(2); }
+function showError(msg) { const e = document.getElementById('errorBox'); e.textContent = msg; e.classList.add('visible'); }
+function hideError() { document.getElementById('errorBox').classList.remove('visible'); }
+
+function showState(s) {
+  document.getElementById('stateReady').style.display   = s === 'ready'   ? 'flex'  : 'none';
+  document.getElementById('stateLoading').style.display = s === 'loading' ? 'flex'  : 'none';
+  document.getElementById('stateQuiz').style.display    = s === 'quiz'    ? 'block' : 'none';
+}
+
+// ── Fetch from server ──────────────────────────────────
+async function fetchBatch(topic) {
+  document.getElementById('loadingText').textContent = 'Fetching questions...';
+  const resp = await fetch('/api/questions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || `Server error ${resp.status}`);
+  if (!Array.isArray(data.questions) || !data.questions.length) throw new Error('No questions returned');
+  return data.questions;
+}
+
+// ── Quiz logic ─────────────────────────────────────────
+async function runQuestion(q) {
+  skipFlag = false;
+  if (paused) await waitResume();
+
+  // Render
+  document.getElementById('phaseLabel').textContent = 'Question';
+  document.getElementById('statQ').textContent = qIdx + 1;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('explanationBox').classList.remove('visible');
+  setArc(1);
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  for (const [L, T] of Object.entries(q.options)) {
+    const d = document.createElement('div');
+    d.className = 'option'; d.id = 'opt-' + L;
+    d.innerHTML = `<span class="opt-letter">${L}</span><span class="opt-text">${T}</span>`;
+    container.appendChild(d);
+  }
+
+  // Speak question
+  await speak(`Question ${qIdx + 1}. ${q.q}`);
+  if (!running || skipFlag) return;
+  await snooze(700);
+
+  // Speak options
+  document.getElementById('phaseLabel').textContent = 'Options';
+  for (const [L, T] of Object.entries(q.options)) {
+    if (!running || skipFlag) break;
+    if (paused) await waitResume();
+    await speak(`${L}. ${T}`, 0.85);
+    await snooze(450);
+  }
+  if (!running || skipFlag) return;
+  await snooze(900);
+
+  // Reveal answer
+  document.getElementById('phaseLabel').textContent = 'Answer';
+  const correct = document.getElementById('opt-' + q.a);
+  if (correct) correct.classList.add('correct');
+  document.getElementById('explanationText').textContent = q.explain;
+  document.getElementById('explanationBox').classList.add('visible');
+  await speak(`The correct answer is ${q.a}. ${q.options[q.a]}. ${q.explain}`, 0.82);
+
+  // Stats
+  qIdx++; heard++;
+  document.getElementById('statH').textContent = heard;
+  document.getElementById('progressFill').style.width = `${Math.min((heard / 30) * 100, 99)}%`;
+
+  if (!running || skipFlag) return;
+  await snooze(2200);
+
+  // Countdown arc
+  for (let i = 5; i >= 0; i--) {
+    if (!running || skipFlag) break;
+    if (paused) await waitResume();
+    setArc(i / 5);
+    await snooze(1000);
+  }
+}
+
+async function runLoop() {
+  running = true;
+  document.getElementById('btnSkip').disabled = false;
+  document.getElementById('btnPause').disabled = false;
+
+  while (running) {
+    if (questions.length - qIdx < 3) {
+      try {
+        const batch = await fetchBatch(currentTopic);
+        questions = questions.concat(batch);
+        hideError();
+      } catch(e) {
+        showError('Could not load questions: ' + e.message);
+        await snooze(5000);
+        continue;
+      }
+    }
+    if (qIdx >= questions.length) break;
+    await runQuestion(questions[qIdx]);
+  }
+}
+
+// ── Controls ───────────────────────────────────────────
+async function startQuiz() {
+  hideError();
+  document.getElementById('btnStart').disabled = true;
+  showState('loading');
+  questions = []; qIdx = 0; heard = 0;
+  running = false; paused = false; skipFlag = false;
+  document.getElementById('statQ').textContent = '—';
+  document.getElementById('statH').textContent = '0';
+  document.getElementById('progressFill').style.width = '0%';
+
+  try {
+    const batch = await fetchBatch(currentTopic);
+    questions = batch;
+    showState('quiz');
+    runLoop();
+  } catch(e) {
+    showError(e.message);
+    showState('ready');
+    document.getElementById('btnStart').disabled = false;
+  }
+}
+
+function skipQ() {
+  skipFlag = true;
+  synth.cancel();
+  badge(false);
+  setTimeout(() => { skipFlag = false; }, 100);
+}
+
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('btnPause');
+  if (paused) {
+    synth.pause();
+    btn.textContent = 'Resume';
+    btn.classList.add('active');
+  } else {
+    synth.resume();
+    btn.textContent = 'Pause';
+    btn.classList.remove('active');
+  }
+}
+
+// ── Topic buttons ──────────────────────────────────────
+document.getElementById('topicBar').addEventListener('click', e => {
+  if (!e.target.classList.contains('topic-btn')) return;
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentTopic = e.target.dataset.topic;
+
+  running = false; paused = false; skipFlag = false;
+  synth.cancel(); badge(false);
+  questions = []; qIdx = 0; heard = 0;
+
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnSkip').disabled = true;
+  document.getElementById('btnPause').disabled = true;
+  document.getElementById('btnPause').textContent = 'Pause';
+  document.getElementById('btnPause').classList.remove('active');
+  document.getElementById('statQ').textContent = '—';
+  document.getElementById('statH').textContent = '0';
+  document.getElementById('progressFill').style.width = '0%';
+  hideError();
+  showState('ready');
+});
+</script>
+</body>
+</html>
