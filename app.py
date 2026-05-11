@@ -20,7 +20,7 @@ SYSTEM_PROMPT = """You are a precise FAA private pilot knowledge test question g
 
 YOUR ENTIRE RESPONSE MUST BE A SINGLE VALID JSON OBJECT. No text before it, no text after it. No markdown. No code fences. Start with { and end with }.
 
-Generate exactly 8 questions in this exact structure:
+Generate exactly 5 questions in this exact structure:
 {"questions":[{"q":"question text","a":"A","options":{"A":"option text","B":"option text","C":"option text"},"explain":"one sentence explanation citing the FAR or principle"}]}
 
 Rules:
@@ -47,11 +47,11 @@ def get_questions():
     try:
         message = client.messages.create(
             model="claude-opus-4-5",
-            max_tokens=2000,
+            max_tokens=4096,
             system=SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
-                "content": f"Generate 8 private pilot knowledge test questions on: {desc}. Output only the JSON object."
+                "content": f"Generate 5 private pilot knowledge test questions on: {desc}. Output only the JSON object."
             }]
         )
 
