@@ -514,6 +514,10 @@ async function runLoop() {
 
 // ── Controls ───────────────────────────────────────────
 async function startQuiz() {
+  // Unlock iOS speech synthesis from direct user tap
+  const unlock = new SpeechSynthesisUtterance('');
+  unlock.volume = 0;
+  synth.speak(unlock);
   hideError();
   document.getElementById('btnStart').disabled = true;
   showState('loading');
